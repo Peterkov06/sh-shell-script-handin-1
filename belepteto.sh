@@ -56,15 +56,14 @@ lista_kapcsolo()
 		hibas_hasznalat "l"
 	fi
 	echo ""
-	while IFS="," read -r terem jog ; do
-		echo "$terem"
-	done < "$ROOMS"
+	cut -d',' -f1 "$ROOMS"
 	echo ""
 	return 0
 }
 
 felismer_kapcsolo()
 {
+	code=0
 	if [ $# -ne 2 ] ; then
 		hibas_hasznalat "f"
 	fi
@@ -72,11 +71,12 @@ felismer_kapcsolo()
 	megold=$(kep_keres "$2")
 	if [ "$megold" = "1" ] ; then
 		echo "A képen látható személy nem szerepel a felhasználók között."
+		code=1
 	else
 		echo "$megold" | tr ',' ' '
 	fi
-		echo ""
-	return 0
+	echo ""
+	return "$code"
 }
 
 bemehet_kapcsolo()
@@ -88,11 +88,11 @@ bemehet_kapcsolo()
 	megold=$(kep_keres "$2")
 	if [ "$megold" = "1" ] ; then
 		echo "A képen látható személy nem szerepel a felhasználók között.\n"
-		return 0
+		return 1
 	fi
 	user_jog=$( echo "$megold" | cut -d',' -f3)
 	while IFS="," read -r terem jog ; do
-                if [ "$3" = "$terem" ] ; then
+		if [ "$3" = "$terem" ] ; then
 			jogosulte=$(van_joga "$user_jog" "$jog")
 			if [ "$jogosulte" = "1" ] ; then
 				echo "A képen látható személy beléphet."
@@ -104,7 +104,7 @@ bemehet_kapcsolo()
 		fi
         done < "$ROOMS"
 	echo "A megadott terem nem létezik.\n"
-	return 0
+	return 1
 }
 
 if [ $# -lt 1 ] ; then
