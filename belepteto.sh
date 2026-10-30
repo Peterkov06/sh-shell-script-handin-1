@@ -19,18 +19,10 @@ hibas_hasznalat()
 kep_keres()
 {
 	res=1
-        while IFS=";" read -r kepek nev csoport jog; do
-                old_ifs=$IFS
-                IFS=","
-                for kep in $kepek; do
-                        if [ "$kep" = "$1" ]; then
-                                IFS=$old_ifs
-                                res="$nev,$csoport,$jog"
-				break 2
-                        fi
-                done
-                IFS=$old_ifs
-        done < "$USERS"
+	line=$(grep -w "^[^;]*$1" "$USERS" | cut -d';' -f2-)
+	if [ -n "$line" ] ; then
+		res="$line"
+	fi
 	echo "$res"
 }
 
@@ -73,7 +65,7 @@ felismer_kapcsolo()
 		echo "A képen látható személy nem szerepel a felhasználók között."
 		code=1
 	else
-		echo "$megold" | tr ',' ' '
+		echo "$megold" | tr ';' ' '
 	fi
 	echo ""
 	return "$code"
@@ -90,19 +82,18 @@ bemehet_kapcsolo()
 		echo "A képen látható személy nem szerepel a felhasználók között.\n"
 		return 1
 	fi
-	user_jog=$( echo "$megold" | cut -d',' -f3)
-	while IFS="," read -r terem jog ; do
-		if [ "$3" = "$terem" ] ; then
-			jogosulte=$(van_joga "$user_jog" "$jog")
-			if [ "$jogosulte" = "1" ] ; then
-				echo "A képen látható személy beléphet."
-			else
-				echo "A képen látható személynek nincs kellő jogosultsága a belépéshez."
-			fi
-			echo ""
-			return 0
+	user_jog=$(echo "$megold" | cut -d';' -f3)
+	terem_jog=$(grep -w "^$3" "$ROOMS" | cut -d',' -f2)
+	if [ -n "$terem_jog" ] ; then
+		jogosulte=$(van_joga "$user_jog" "$terem_jog")
+		if [ "$jogosulte" = "1" ] ; then
+			echo "A képen látható személy beléphet."
+		else
+			echo "A képen látható személynek nincs kellő jogosultsága a belépéshez."
 		fi
-        done < "$ROOMS"
+		echo ""
+		return 0
+	fi
 	echo "A megadott terem nem létezik.\n"
 	return 1
 }
